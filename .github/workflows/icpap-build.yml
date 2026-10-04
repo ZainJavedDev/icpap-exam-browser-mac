@@ -1,0 +1,88 @@
+name: Build ICPAP Exam Browser for macOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      exam_url:
+        description: Address of the exam system, without a trailing slash, e.g. https://exam.icpap.org
+        required: true
+      allow_virtual_machines:
+        description: Allow running in a virtual machine. For test builds only.
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select the newest Xcode
+        run: |
+          xcode=$(ls -d /Applications/Xcode_*.app | grep -iv beta | sort -V | tail -1)
+          sudo xcode-select -s "$xcode"
+          xcodebuild -version
+
+      - name: Bake in the exam address, Config Key and virtual machine policy
+        env:
+          EXAM_URL: ${{ inputs.exam_url }}
+          CONFIG_KEY: ${{ secrets.ICPAP_CONFIG_KEY }}
+          ALLOW_VM: ${{ inputs.allow_virtual_machines }}
+        run: |
+          url=$(echo "$EXAM_URL" | xargs)
+          url=${url%/}
+          address='^https?://[^[:space:]"\\/]+(/[^[:space:]"\\]*)?$'
+          if [[ ! "$url" =~ $address ]]; then echo "::error::Not an http(s) address: $url"; exit 1; fi
+          if [[ -z "$CONFIG_KEY" ]]; then
+            echo "::warning::The ICPAP_CONFIG_KEY secret is not set. This build sends no Config Key, so the exam system will refuse it. Use it for testing only."
+            echo "SUFFIX=-NO-CONFIG-KEY" >> "$GITHUB_ENV"
+          elif [[ ! "$CONFIG_KEY" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "::error::The ICPAP_CONFIG_KEY secret must be 64 lowercase hexadecimal characters."; exit 1
+          fi
+
+          file=Classes/Global/SEBConstants.h
+          export URL="$url" BOOL=$([[ "$ALLOW_VM" == true ]] && echo YES || echo NO)
+          perl -pi -e 's/(ICPAPExamURL = @")[^"]*(";)/$1$ENV{URL}$2/; s/(ICPAPConfigKey = @")[^"]*(";)/$1$ENV{CONFIG_KEY}$2/; s/(ICPAPAllowVirtualMachines = )\w+;/$1$ENV{BOOL};/' "$file"
+          for expected in "ICPAPExamURL = @\"$url\";" "ICPAPConfigKey = @\"$CONFIG_KEY\";" "ICPAPAllowVirtualMachines = $BOOL;"; do
+            grep -qF "$expected" "$file" || { echo "::error::Could not set $expected in $file"; exit 1; }
+          done
+          echo "Exam address: $url, virtual machines allowed: $BOOL"
+
+      # Ad-hoc signed until we have an Apple Developer ID; see README. The hardened runtime is off because it
+      # would refuse to load ad-hoc signed frameworks, and only matters for notarisation.
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -workspace SafeExamBrowser.xcworkspace -scheme "Safe Exam Browser" -configuration Release \
+            -destination 'generic/platform=macOS' -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            SYMROOT="$PWD/build" ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= \
+            ENABLE_HARDENED_RUNTIME=NO \
+            2>&1 | tee "$RUNNER_TEMP/build.log" | xcbeautify --renderer github-actions
+
+      - name: Package disk image
+        run: |
+          app="build/Release/Safe Exam Browser.app"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          lipo -archs "$app/Contents/MacOS/Safe Exam Browser"
+          version=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$app/Contents/Info.plist")
+          name="ICPAP-Exam-Browser-$version-$GITHUB_RUN_NUMBER-macOS$SUFFIX"
+          mkdir dmg
+          ditto "$app" "dmg/ICPAP Exam Browser.app"
+          ln -s /Applications dmg/Applications
+          hdiutil create -volname "ICPAP Exam Browser" -srcfolder dmg -format UDZO -ov "$name.dmg"
+          echo "NAME=$name" >> "$GITHUB_ENV"
+
+      # Compression is off: the disk image is already compressed.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.NAME }}.dmg
+          path: ${{ env.NAME }}.dmg
+          compression-level: 0
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: build-log
+          path: ${{ runner.temp }}/build.log

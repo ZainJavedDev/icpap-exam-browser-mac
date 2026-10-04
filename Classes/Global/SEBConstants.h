@@ -44,6 +44,11 @@ static NSString __unused *sebPrivateUserDefaultsPrefix = @"org_safeexambrowser_"
 
 static NSString __unused *sebErrorDomain = @"org.safeexambrowser.SEB";
 
+// ICPAP: the build workflow (.github/workflows/icpap-build.yml) replaces these three lines.
+static NSString __unused *ICPAPExamURL = @"http://localhost:8000";
+static NSString __unused *ICPAPConfigKey = @"";
+static BOOL const __unused ICPAPAllowVirtualMachines = NO;
+
 static NSString __unused *SEBStartPage = @"https://safeexambrowser.org/start";
 static NSString __unused *SEBHelpPage = @"https://safeexambrowser.org/macosx";
 // Localized download page: the "%@" is replaced by a language code (e.g. "en", "de", "fr").
@@ -56,9 +61,9 @@ static NSString __unused *SEBWebsiteShort = @"safeexambrowser.org";
 static NSString __unused *SEBOrganization = @"ETH Zurich";
 static NSString __unused *SEBCountry = @"CH";
 
-static NSString __unused *SEBFullAppNameClassic = @"Safe Exam Browser";
+static NSString __unused *SEBFullAppNameClassic = @"ICPAP Exam Browser";
 static NSString __unused *SEBFullAppName = @"SafeExamBrowser";
-static NSString __unused *SEBShortAppName = @"SEB";
+static NSString __unused *SEBShortAppName = @"ICPAP Exam Browser";
 static NSString __unused *SEBExtraShortAppName = @"SEB";
 static NSString __unused *SEBFileExtension = @"seb";
 static NSString __unused *SEBConfigMIMEType = @"application/seb";

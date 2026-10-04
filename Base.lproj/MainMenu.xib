@@ -15,10 +15,10 @@
         </customObject>
         <menu systemMenu="main" id="29">
             <items>
-                <menuItem title="SEB" id="56">
-                    <menu key="submenu" title="SEB" systemMenu="apple" id="57">
+                <menuItem title="ICPAP Exam Browser" id="56">
+                    <menu key="submenu" title="ICPAP Exam Browser" systemMenu="apple" id="57">
                         <items>
-                            <menuItem title="About SEB" id="58">
+                            <menuItem title="About ICPAP Exam Browser" id="58">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="showAbout:" target="543" id="1014"/>
@@ -36,7 +36,7 @@
                             <menuItem isSeparatorItem="YES" id="143">
                                 <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                             </menuItem>
-                            <menuItem title="Quit SEB" keyEquivalent="q" id="136">
+                            <menuItem title="Quit ICPAP Exam Browser" keyEquivalent="q" id="136">
                                 <connections>
                                     <action selector="requestedQuit:" target="543" id="713"/>
                                     <binding destination="993" name="enabled" keyPath="values.org_safeexambrowser_SEB_allowQuit" id="1013"/>
@@ -397,7 +397,7 @@
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <menu key="submenu" title="Help" systemMenu="help" id="491">
                         <items>
-                            <menuItem title="SEB Help" enabled="NO" keyEquivalent="?" id="492">
+                            <menuItem title="ICPAP Exam Browser Help" enabled="NO" keyEquivalent="?" id="492">
                                 <connections>
                                     <action selector="showHelp:" target="543" id="1055"/>
                                 </connections>
@@ -1126,7 +1126,7 @@ DQ
                     <subviews>
                         <textField focusRingType="none" horizontalHuggingPriority="750" horizontalCompressionResistancePriority="250" verifyAmbiguity="off" preferredMaxLayoutWidth="460" translatesAutoresizingMaskIntoConstraints="NO" id="5Ez-0g-525" customClass="SEBTextField">
                             <rect key="frame" x="-2" y="564" width="464" height="24"/>
-                            <textFieldCell key="cell" allowsUndo="NO" sendsActionOnEndEditing="YES" alignment="center" title="Prohibited Process Locked SEB!" id="9V8-Fs-9oi">
+                            <textFieldCell key="cell" allowsUndo="NO" sendsActionOnEndEditing="YES" alignment="center" title="Prohibited Process Locked ICPAP Exam Browser!" id="9V8-Fs-9oi">
                                 <font key="font" size="20" name="HelveticaNeue-Bold"/>
                                 <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>

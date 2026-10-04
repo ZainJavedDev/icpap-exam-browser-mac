@@ -304,7 +304,7 @@ static SEBSettings *sharedSEBSettings = nil;
                    @NO,
                    @"allowUserAppFolderInstall",
                    
-                   @NO,
+                   @(ICPAPAllowVirtualMachines),
                    @"allowVirtualMachine",
 
                    @NO,
@@ -343,10 +343,10 @@ static SEBSettings *sharedSEBSettings = nil;
                    @YES,
                    @"browserMediaAutoplayVideo",
                    
-                   @NO,
+                   @YES,
                    @"browserMediaCaptureCamera", //setting for WebRTC camera capture
-                   
-                   @NO,
+
+                   @YES,
                    @"browserMediaCaptureMicrophone", //setting for WebRTC microphone capture
                    
                    @NO,
@@ -398,7 +398,8 @@ static SEBSettings *sharedSEBSettings = nil;
                    @"browserWindowShowURL",
                    
 #if TARGET_OS_OSX
-                   [NSNumber numberWithLong:webViewSelectForceModernInForeignNewTabs],
+                   // ICPAP: the camera needs the modern WebView, which sends the Config Key header too (SEBAbstractModernWebView).
+                   [NSNumber numberWithLong:webViewSelectForceModern],
 #else
                    [NSNumber numberWithLong:webViewSelectForceModern],
 #endif
@@ -722,7 +723,9 @@ static SEBSettings *sharedSEBSettings = nil;
                    [NSNumber numberWithLong:SEBLogLevelDebug],
                    @"logLevel",
                    
-                   [NSNumber numberWithLong:lockdownModePolicyAutomatic],
+                   // ICPAP: Automatic Assessment Configuration needs an entitlement which Apple grants only to
+                   // a paid developer team, so our builds lock down the Mac in the classic kiosk mode.
+                   [NSNumber numberWithLong:lockdownModePolicyEnforceClassic],
                    @"lockdownModePolicy",
 
                    @NO,
@@ -890,7 +893,7 @@ static SEBSettings *sharedSEBSettings = nil;
                    [NSNumber numberWithLong:useSystemProxySettings],
                    @"proxySettingsPolicy",
                    
-                   @"",
+                   [ICPAPExamURL stringByAppendingString:@"/seb/quit"],
                    @"quitURL",
                    
                    @YES,
@@ -1058,7 +1061,7 @@ static SEBSettings *sharedSEBSettings = nil;
                    @YES,
                    @"showTime",
                    
-                   SEBStartPage,
+                   [ICPAPExamURL stringByAppendingString:@"/login"],
                    @"startURL",
                    
                    @NO,
@@ -1079,7 +1082,7 @@ static SEBSettings *sharedSEBSettings = nil;
                    @NO,
                    @"touchOptimized",
                    
-                   @NO,
+                   @YES,
                    @"URLFilterEnable",
                    
                    @NO,
@@ -1103,7 +1106,11 @@ static SEBSettings *sharedSEBSettings = nil;
                    @NO,
                    @"useTemporaryDownUploadDirectory",
                    
-                   [NSArray array],
+                   // ICPAP: only the exam system and meet.jit.si may be opened.
+                   @[
+                       @{@"active" : @YES, @"regex" : @NO, @"action" : @(URLFilterActionAllow), @"expression" : [NSURL URLWithString:ICPAPExamURL].host ?: @""},
+                       @{@"active" : @YES, @"regex" : @NO, @"action" : @(URLFilterActionAllow), @"expression" : @"meet.jit.si"}
+                   ],
                    @"URLFilterRules",
                    
                    @"",

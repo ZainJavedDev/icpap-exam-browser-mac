@@ -787,7 +787,6 @@
 		69E0F3481C454F370038CCCD /* SEB.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 69E0F3461C454F370038CCCD /* SEB.xcdatamodeld */; };
 		69E1310826C665B0005C5530 /* SEBOSXWKWebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69E1310726C665B0005C5530 /* SEBOSXWKWebViewController.swift */; };
 		69E18FE82987D303007E0689 /* qrCodeGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69E18FE72987D303007E0689 /* qrCodeGenerator.swift */; };
-		69E1F1D62A14118F00B149A4 /* libSEBSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 69E1F1D52A14118F00B149A4 /* libSEBSupport.a */; };
 		69E2BBB126FDBAA90055531A /* SEBServerOSXViewController.h in Headers */ = {isa = PBXBuildFile; fileRef = 69E2BBAE26FDBAA90055531A /* SEBServerOSXViewController.h */; };
 		69E2BBB226FDBAA90055531A /* SEBServerOSXViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 69E2BBAF26FDBAA90055531A /* SEBServerOSXViewController.m */; };
 		69E2BBB62703FD8F0055531A /* SEBServerOSXViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 69E2BBB42703FD8F0055531A /* SEBServerOSXViewController.xib */; };
@@ -1866,7 +1865,6 @@
 				6943C6142A991C4000EC18FF /* CocoaLumberjack in Frameworks */,
 				6943C6162A991C4000EC18FF /* CocoaLumberjackSwift in Frameworks */,
 				6905C5AB1961B4E5000008EC /* SystemConfiguration.framework in Frameworks */,
-				69E1F1D62A14118F00B149A4 /* libSEBSupport.a in Frameworks */,
 				6940A7671853B62000D9D00D /* libz.dylib in Frameworks */,
 				69F7B61D14F411FB00FD0761 /* WebKit.framework in Frameworks */,
 				69F7B61E14F411FB00FD0761 /* Cocoa.framework in Frameworks */,
@@ -5856,13 +5854,13 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_ENTITLEMENTS = "Safe Exam Browser/Safe Exam Browser.entitlements";
-				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_ENTITLEMENTS = "Safe Exam Browser/ICPAP Exam Browser.entitlements";
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 15A08;
-				DEVELOPMENT_TEAM = 6F38DNSC7X;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -5902,7 +5900,7 @@
 					"-ObjC",
 				);
 				PRECOMPS_INCLUDE_HEADERS_FROM_BUILT_PRODUCTS_DIR = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = org.safeexambrowser.SafeExamBrowser;
+				PRODUCT_BUNDLE_IDENTIFIER = org.icpap.ExamBrowser;
 				PRODUCT_NAME = "Safe Exam Browser";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
@@ -5923,13 +5921,13 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_ENTITLEMENTS = "Safe Exam Browser/Safe Exam Browser.entitlements";
-				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_ENTITLEMENTS = "Safe Exam Browser/ICPAP Exam Browser.entitlements";
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 15A08;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = 6F38DNSC7X;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -5969,7 +5967,7 @@
 					"-ObjC",
 				);
 				PRECOMPS_INCLUDE_HEADERS_FROM_BUILT_PRODUCTS_DIR = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = org.safeexambrowser.SafeExamBrowser;
+				PRODUCT_BUNDLE_IDENTIFIER = org.icpap.ExamBrowser;
 				PRODUCT_NAME = "Safe Exam Browser";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;

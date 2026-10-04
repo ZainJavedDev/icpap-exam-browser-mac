@@ -115,7 +115,23 @@ import CocoaLumberjackSwift
         userContentController.add(self, name: "updateKeys")
         userContentController.add(self, name: "firstElementBlured")
         userContentController.add(self, name: "lastElementBlured")
+        if #available(macOS 11.0, iOS 14.0, *), !ICPAPConfigKey.isEmpty {
+            let configKeyHeaderScript = WKUserScript(source: ICPAPConfigKeyHeaderHandler.script, injectionTime: .atDocumentStart, forMainFrameOnly: false)
+            userContentController.addUserScript(configKeyHeaderScript)
+            userContentController.addScriptMessageHandler(ICPAPConfigKeyHeaderHandler(navigationDelegate: navigationDelegate), contentWorld: .page, name: ICPAPConfigKeyHeaderHandler.name)
+        }
         webViewConfiguration?.userContentController = userContentController
+
+        // ICPAP: the camera needs a secure context, which a plain-http test server on the local network is not.
+        // WebKit's only switch for this (Safari's "Allow Media Capture on Insecure Sites") is private.
+        if let startURL = URL(string: UserDefaults.standard.secureString(forKey: "org_safeexambrowser_SEB_startURL") ?? ""), startURL.scheme == "http",
+           let preferences = webViewConfiguration?.preferences {
+            let selector = NSSelectorFromString("_setMediaCaptureRequiresSecureConnection:")
+            if preferences.responds(to: selector) {
+                typealias Setter = @convention(c) (AnyObject, Selector, Bool) -> Void
+                unsafeBitCast(preferences.method(for: selector), to: Setter.self)(preferences, selector, false)
+            }
+        }
         let allowContentJavaScript = UserDefaults.standard.secureBool(forKey: "org_safeexambrowser_SEB_enableJavaScript")
         if #available(macOS 11.0, iOS 14.0, *) {
             webViewConfiguration?.defaultWebpagePreferences.allowsContentJavaScript = allowContentJavaScript
@@ -183,6 +199,7 @@ import CocoaLumberjackSwift
 
     private var firstLoad = true
     private var currentFrame: WKFrameInfo?
+    private var lastConfigKeyHeaderReload: URL?
 
     // Guards against an endless white-screen reload loop when the web content
     // process keeps terminating. Reset to 0 after a successful navigation.
@@ -857,6 +874,31 @@ import CocoaLumberjackSwift
         }
     }
 
+    // ICPAP: the exam system checks the Config Key header, which the Windows version sends with every page
+    // request. WKWebView can't add headers to its own requests, so a page load without the header is cancelled
+    // and loaded again with it. This only works for GET requests: WKWebView doesn't expose form submission bodies.
+    private func requestWithConfigKeyHeader(_ navigationAction: WKNavigationAction) -> URLRequest? {
+        let request = navigationAction.request
+        guard !ICPAPConfigKey.isEmpty,
+              navigationAction.targetFrame?.isMainFrame == true,
+              navigationAction.navigationType != .backForward,
+              (request.httpMethod ?? "GET") == "GET",
+              let url = request.url, url.scheme == "http" || url.scheme == "https" else {
+            return nil
+        }
+        let reloadedURL = lastConfigKeyHeaderReload
+        lastConfigKeyHeaderReload = nil
+        // The second condition stops a loop, should WebKit ever drop the header we added.
+        guard request.value(forHTTPHeaderField: SEBConfigKeyHeaderKey) == nil, url != reloadedURL,
+              let configKey = navigationDelegate?.configKey?(for: url) else {
+            return nil
+        }
+        var modifiedRequest = request
+        modifiedRequest.setValue(configKey, forHTTPHeaderField: SEBConfigKeyHeaderKey)
+        lastConfigKeyHeaderReload = url
+        return modifiedRequest
+    }
+
     public func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         var newTab = false
         if navigationAction.targetFrame == nil {
@@ -870,6 +912,12 @@ import CocoaLumberjackSwift
 
         guard let url = navigationAction.request.url else {
             decisionHandler(.cancel)
+            return
+        }
+
+        if let request = requestWithConfigKeyHeader(navigationAction) {
+            decisionHandler(.cancel)
+            webView.load(request)
             return
         }
 
@@ -1304,5 +1352,78 @@ extension SEBAbstractModernWebView: WKDownloadDelegate {
             DDLogInfo("File was downloaded at \(url)")
             navigationDelegate?.fileDownloadedSuccessfully?(url.path)
         }
+    }
+}
+
+
+// ICPAP: adds the Config Key header to the page's fetch and XMLHttpRequest calls to its own origin, as the
+// Windows version does for every request to the page's host. The page asks the app for each request's hash,
+// so the key itself never reaches the page.
+@available(macOS 11.0, iOS 14.0, *)
+private final class ICPAPConfigKeyHeaderHandler: NSObject, WKScriptMessageHandlerWithReply {
+
+    static let name = "icpapConfigKeyHash"
+
+    static let script = """
+    (function () {
+      var handler = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.\(name);
+      if (!handler || !/^https?:$/.test(location.protocol)) { return; }
+      var header = 'X-SafeExamBrowser-ConfigKeyHash';
+      function sameOriginURL(url) {
+        try {
+          var absolute = new URL(url, location.href);
+          return absolute.origin === location.origin ? absolute.href : null;
+        } catch (e) {
+          return null;
+        }
+      }
+      var fetch = window.fetch;
+      window.fetch = function (input, init) {
+        var request = new Request(input, init);
+        var url = sameOriginURL(request.url);
+        if (!url) { return fetch.call(window, request); }
+        return handler.postMessage(url).then(function (hash) {
+          var headers = new Headers(request.headers);
+          headers.set(header, hash);
+          return fetch.call(window, new Request(request, { headers: headers }));
+        }, function () {
+          return fetch.call(window, request);
+        });
+      };
+      var open = XMLHttpRequest.prototype.open;
+      var send = XMLHttpRequest.prototype.send;
+      XMLHttpRequest.prototype.open = function (method, url, async) {
+        // A synchronous request can't wait for the hash, so it goes without the header.
+        this.icpapConfigKeyURL = (arguments.length < 3 || async) ? sameOriginURL(url) : null;
+        return open.apply(this, arguments);
+      };
+      XMLHttpRequest.prototype.send = function (body) {
+        var request = this;
+        if (!request.icpapConfigKeyURL) { return send.apply(request, arguments); }
+        handler.postMessage(request.icpapConfigKeyURL).then(function (hash) {
+          request.setRequestHeader(header, hash);
+        }, function () {}).then(function () {
+          send.call(request, body);
+        });
+      };
+    })();
+    """
+
+    private weak var navigationDelegate: SEBAbstractWebViewNavigationDelegate?
+
+    init(navigationDelegate: SEBAbstractWebViewNavigationDelegate?) {
+        self.navigationDelegate = navigationDelegate
+    }
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
+        // Only answer for the frame's own origin, so an embedded page (such as a Jitsi meeting) can't get hashes for the exam system.
+        let origin = message.frameInfo.securityOrigin
+        guard let string = message.body as? String, let url = URL(string: string),
+              url.scheme == origin.protocol, url.host == origin.host, (url.port ?? 0) == origin.port,
+              let hash = navigationDelegate?.configKey?(for: url) else {
+            replyHandler(nil, "No Config Key for this address")
+            return
+        }
+        replyHandler(hash, nil)
     }
 }

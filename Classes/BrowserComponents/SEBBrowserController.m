@@ -314,8 +314,35 @@ void run_block_on_ui_thread(dispatch_block_t block)
     return _browserExamKey;
 }
 
+// ICPAP: the exam system checks a fixed Config Key, the same one the Windows version sends,
+// rather than one calculated from the current settings.
+static NSData *icpapConfigKey(void)
+{
+    static NSData *key;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        if (ICPAPConfigKey.length != 64) {
+            return;
+        }
+        NSMutableData *bytes = [NSMutableData dataWithCapacity:32];
+        for (NSUInteger i = 0; i < 64; i += 2) {
+            unsigned int byte;
+            if (![[NSScanner scannerWithString:[ICPAPConfigKey substringWithRange:NSMakeRange(i, 2)]] scanHexInt:&byte]) {
+                return;
+            }
+            uint8_t value = byte;
+            [bytes appendBytes:&value length:1];
+        }
+        key = [bytes copy];
+    });
+    return key;
+}
+
 - (NSData *)configKey
 {
+    if (icpapConfigKey()) {
+        return icpapConfigKey();
+    }
     if (_configKey.length == 0) {
         self.configKey = [[NSUserDefaults standardUserDefaults] secureObjectForKey:@"org_safeexambrowser_configKey"];
     }
